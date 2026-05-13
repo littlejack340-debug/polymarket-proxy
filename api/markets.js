@@ -10,17 +10,10 @@ export default async function handler(req, res) {
   try {
     const response = await fetch(
       "https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=50&order=volume24hr&ascending=false",
-      {
-        headers: {
-          "Accept": "application/json",
-          "User-Agent": "Mozilla/5.0",
-        },
-      }
+      { headers: { "Accept": "application/json", "User-Agent": "Mozilla/5.0" } }
     );
 
-    if (!response.ok) {
-      throw new Error(`Polymarket API error: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
 
     const data = await response.json();
 
@@ -37,7 +30,7 @@ export default async function handler(req, res) {
           noPrice: +(1 - yesPrice).toFixed(3),
           volume: parseFloat(m.volume24hr || m.volume || 0),
           endDate: m.endDateIso || m.endDate || "",
-          category: m.tags?.[0]?.label || m.tags?.[0] || "Other",
+          category: m.tags?.[0]?.label || "Other",
         };
       })
       .filter(m => m.yesPrice > 0.02 && m.yesPrice < 0.98);
