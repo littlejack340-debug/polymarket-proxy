@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inscription</title>
+<style>
+  :root {
+    --bg1: #f6f8fc;
+    --bg2: #eef2fb;
+    --card: #ffffff;
+    --text: #1a1f36;
+    --muted: #6b7280;
+    --border: #e3e8f0;
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --error: #dc2626;
+    --success: #047857;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, var(--bg1), var(--bg2));
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--card);
+    border-radius: 20px;
+    padding: 36px 32px;
+    box-shadow: 0 20px 50px rgba(31, 41, 84, 0.12);
+    border: 1px solid var(--border);
+  }
+  .card h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .card .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 26px;
+  }
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%;
+    padding: 13px 15px;
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fafbfe;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    background: #fff;
+  }
+  .row { display: flex; gap: 12px; }
+  .row .field { flex: 1; }
+  button.screen-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    color: #fff;
+    background: var(--primary);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background .15s, transform .05s;
+  }
+  button.screen-btn:hover { background: var(--primary-dark); }
+  button.screen-btn:active { transform: scale(.99); }
+  button.screen-btn:disabled { opacity: .6; cursor: not-allowed; }
+  .message {
+    margin-top: 18px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    display: none;
+  }
+  .message.error { display: block; background: #fef2f2; color: var(--error); border: 1px solid #fecaca; }
+  .message.success { display: block; background: #ecfdf5; color: var(--success); border: 1px solid #a7f3d0; }
+  .recap {
+    margin-top: 20px;
+    display: none;
+    text-align: center;
+  }
+  .recap img {
+    max-width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  @media (max-width: 480px) {
+    .card { padding: 28px 20px; }
+    .row { flex-direction: column; gap: 0; }
+  }
+</style>
+</head>
+<body>
+  <main class="card">
+    <h1>Créer un compte</h1>
+    <p class="subtitle">Remplissez le formulaire pour vous inscrire</p>
+
+    <form id="signup-form" novalidate>
+      <div class="row">
+        <div class="field">
+          <label for="firstName">Prénom</label>
+          <input type="text" id="firstName" name="firstName" autocomplete="given-name" />
+        </div>
+        <div class="field">
+          <label for="lastName">Nom</label>
+          <input type="text" id="lastName" name="lastName" autocomplete="family-name" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" autocomplete="email" />
+      </div>
+
+      <div class="field">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" name="password" autocomplete="new-password" />
+      </div>
+
+      <div class="field">
+        <label for="confirmPassword">Confirmation du mot de passe</label>
+        <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" />
+      </div>
+
+      <button type="submit" class="screen-btn" id="screen-btn">SCREEN</button>
+    </form>
+
+    <div class="message" id="message"></div>
+
+    <div class="recap" id="recap">
+      <img id="recap-img" alt="Récapitulatif d'inscription" />
+    </div>
+  </main>
+
+<script>
+  const form = document.getElementById("signup-form");
+  const btn = document.getElementById("screen-btn");
+  const messageEl = document.getElementById("message");
+  const recapEl = document.getElementById("recap");
+  const recapImg = document.getElementById("recap-img");
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function showMessage(text, type) {
+    messageEl.textContent = text;
+    messageEl.className = "message " + type;
+  }
+
+  function generateRecapImage({ firstName, lastName, email, date }) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 460;
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "#f6f8fc";
+    ctx.fillRect(0, 0, 800, 460);
+
+    ctx.fillStyle = "#ffffff";
+    roundRect(ctx, 40, 40, 720, 380, 20);
+    ctx.fill();
+
+    ctx.fillStyle = "#4f46e5";
+    roundRect(ctx, 40, 40, 720, 80, 20);
+    ctx.fill();
+    ctx.fillStyle = "#4f46e5";
+    ctx.fillRect(40, 100, 720, 20);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 28px -apple-system, Segoe UI, Roboto, sans-serif";
+    ctx.fillText("Récapitulatif d'inscription", 70, 92);
+
+    const rows = [
+      ["Prénom", firstName],
+      ["Nom", lastName],
+      ["Email", email],
+      ["Date d'inscription", date],
+    ];
+
+    let y = 180;
+    rows.forEach(([label, value]) => {
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "16px -apple-system, Segoe UI, Roboto, sans-serif";
+      ctx.fillText(label, 70, y);
+      ctx.fillStyle = "#1a1f36";
+      ctx.font = "bold 22px -apple-system, Segoe UI, Roboto, sans-serif";
+      ctx.fillText(String(value), 70, y + 30);
+      y += 70;
+    });
+
+    return canvas.toDataURL("image/png");
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const firstName = form.firstName.value.trim();
+    const lastName = form.lastName.value.trim();
+    const email = form.email.value.trim();
+    const password = form.password.value;
+    const confirmPassword = form.confirmPassword.value;
+
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      return showMessage("Veuillez remplir tous les champs.", "error");
+    }
+    if (!EMAIL_RE.test(email)) {
+      return showMessage("Veuillez saisir une adresse email valide.", "error");
+    }
+    if (password.length < 8) {
+      return showMessage("Le mot de passe doit contenir au moins 8 caractères.", "error");
+    }
+    if (password !== confirmPassword) {
+      return showMessage("Les mots de passe ne correspondent pas.", "error");
+    }
+
+    const date = new Date().toLocaleDateString("fr-FR", {
+      day: "2-digit", month: "long", year: "numeric",
+    });
+    const imageBase64 = generateRecapImage({ firstName, lastName, email, date });
+
+    btn.disabled = true;
+    btn.textContent = "Enregistrement...";
+    messageEl.className = "message";
+
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName, lastName, email, password, imageBase64 }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Une erreur est survenue.");
+      }
+
+      recapImg.src = data.imageUrl || imageBase64;
+      recapEl.style.display = "block";
+      showMessage("Inscription enregistrée avec image récapitulative.", "success");
+      form.reset();
+    } catch (err) {
+      showMessage(err.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "SCREEN";
+    }
+  });
+</script>
+</body>
+</html>
