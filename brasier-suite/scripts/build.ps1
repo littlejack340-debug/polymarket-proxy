@@ -32,21 +32,62 @@ function Find-VisualStudioWithCpp ([string] $range) {
     return & $vswhere -version $range -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -latest -property installationPath
 }
 
+function Get-CMakeVersion ([string] $exe) {
+    $line = (& $exe --version | Select-Object -First 1)
+    if ($line -match '(\d+)\.(\d+)\.(\d+)') { return [version]"$($Matches[1]).$($Matches[2]).$($Matches[3])" }
+    return $null
+}
+
+# Nom du generateur Visual Studio (ex. "Visual Studio 18 2026") connu de ce CMake, ou $null
+function Get-VsGenerator ([string] $exe, [string] $vsMajor) {
+    return & $exe --help | ForEach-Object {
+        if ($_ -match "^\*?\s*(Visual Studio $vsMajor \d{4})") { $Matches[1] }
+    } | Select-Object -First 1
+}
+
+# CMake : celui du PATH, sinon C:\Program Files\CMake, sinon celui fourni avec Visual Studio.
+# On garde le premier qui est assez recent pour JUCE (3.22) ET qui connait le generateur voulu.
+function Find-CMake ([string] $vsPath, [string] $vsMajor) {
+    $candidates = @()
+    $inPath = Get-Command cmake -ErrorAction SilentlyContinue
+    if ($inPath) { $candidates += $inPath.Source }
+    $candidates += (Join-Path $env:ProgramFiles 'CMake\bin\cmake.exe')
+    if ($vsPath) { $candidates += (Join-Path $vsPath 'Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe') }
+
+    foreach ($candidate in $candidates) {
+        if ($candidate -and (Test-Path $candidate)) {
+            $version = Get-CMakeVersion $candidate
+            if ($version -and $version -ge [version]'3.22.0') {
+                $gen = Get-VsGenerator $candidate $vsMajor
+                if ($gen) { return @{ Exe = $candidate; Generator = $gen; Version = $version } }
+            }
+        }
+    }
+    return $null
+}
+
+$vsPath = $null
 if ($VisualStudio -eq 'auto') {
-    if (Find-VisualStudioWithCpp '[17.0,18.0)') { $VisualStudio = '2022' }
-    elseif (Find-VisualStudioWithCpp '[18.0,19.0)') { $VisualStudio = '2026' }
-    else { throw "Aucun Visual Studio 2022 ou 2026 avec les outils C++ : lance scripts\check-prereqs.ps1" }
+    $vsPath = Find-VisualStudioWithCpp '[17.0,18.0)'
+    if ($vsPath) { $VisualStudio = '2022' }
+    else {
+        $vsPath = Find-VisualStudioWithCpp '[18.0,19.0)'
+        if ($vsPath) { $VisualStudio = '2026' }
+        else { throw "Aucun Visual Studio 2022 ou 2026 avec les outils C++ : lance scripts\check-prereqs.ps1" }
+    }
+}
+else {
+    $vsPath = Find-VisualStudioWithCpp $(if ($VisualStudio -eq '2026') { '[18.0,19.0)' } else { '[17.0,18.0)' })
 }
 
-# Nom exact du generateur CMake correspondant (lu dans 'cmake --help')
 $vsMajor = if ($VisualStudio -eq '2026') { '18' } else { '17' }
-$generator = & cmake --help | ForEach-Object {
-    if ($_ -match "^\*?\s*(Visual Studio $vsMajor \d{4})") { $Matches[1] }
-} | Select-Object -First 1
-
-if (-not $generator) {
-    throw "Ce CMake ne connait pas Visual Studio $VisualStudio. Mets CMake a jour : winget upgrade Kitware.CMake (puis rouvre le terminal)"
+$found = Find-CMake $vsPath $vsMajor
+if (-not $found) {
+    throw "Aucun CMake (3.22+) connaissant Visual Studio $VisualStudio : winget install Kitware.CMake (puis rouvre le terminal)"
 }
+$cmake = $found.Exe
+$generator = $found.Generator
+Write-Host "CMake $($found.Version) : $cmake" -ForegroundColor Cyan
 
 $buildDir = Join-Path $root "build\vs$VisualStudio"
 Write-Host "Visual Studio $VisualStudio -> generateur '$generator', dossier $buildDir" -ForegroundColor Cyan
@@ -57,11 +98,11 @@ try {
     $configureArgs = @('-S', '.', '-B', $buildDir, '-G', $generator, '-A', 'x64')
     if ($Tests) { $configureArgs += '-DBRASIER_BUILD_TESTS=ON' }
 
-    & cmake @configureArgs
+    & $cmake @configureArgs
     if ($LASTEXITCODE -ne 0) { throw "Echec de la configuration CMake" }
 
     # 2. Compilation
-    & cmake --build $buildDir --config $Config --parallel
+    & $cmake --build $buildDir --config $Config --parallel
     if ($LASTEXITCODE -ne 0) { throw "Echec de la compilation" }
 
     # 3. Tests hors-ligne puis chargement des vrais .vst3 par un hote de test (optionnels)

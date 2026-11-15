@@ -76,32 +76,50 @@ else {
 # ---------------------------------------------------------------------------
 # 3. CMake >= 3.22 (minimum de JUCE 8)
 # ---------------------------------------------------------------------------
-$cmake = Get-Command cmake
-if ($cmake) {
-    $line = (& cmake --version | Select-Object -First 1)
-    if ($line -match '(\d+)\.(\d+)\.(\d+)') {
-        $ver = [version]"$($Matches[1]).$($Matches[2]).$($Matches[3])"
-        # JUCE 8 demande CMake 3.22 ; Visual Studio 2026 demande un CMake qui connait son generateur (4.2+)
-        $minimum = if ($vsVersion -eq '2026') { [version]'4.2.0' } else { [version]'3.22.0' }
-        if ($ver -ge $minimum) {
-            Write-Ok "CMake $ver : $($cmake.Source)"
-        }
-        else {
-            Write-Miss "CMake $ver est trop ancien ($minimum minimum ici)" "winget upgrade Kitware.CMake  (puis rouvrir le terminal)"
-        }
+function Get-CMakeVersion ([string] $exe) {
+    $line = (& $exe --version | Select-Object -First 1)
+    if ($line -match '(\d+)\.(\d+)\.(\d+)') { return [version]"$($Matches[1]).$($Matches[2]).$($Matches[3])" }
+    return $null
+}
+
+# JUCE 8 demande CMake 3.22, et le CMake doit connaitre le generateur de la version de Visual Studio installee
+$minimum = [version]'3.22.0'
+$vsMajor = if ($vsVersion -eq '2026') { '18' } else { '17' }
+
+function Get-VsGenerator ([string] $exe) {
+    return & $exe --help | ForEach-Object {
+        if ($_ -match "^\*?\s*(Visual Studio $vsMajor \d{4})") { $Matches[1] }
+    } | Select-Object -First 1
+}
+
+# Ordre de recherche (le meme que build.ps1) : PATH, C:\Program Files\CMake, CMake fourni avec Visual Studio
+$candidates = @()
+$inPath = Get-Command cmake
+if ($inPath) { $candidates += @{ Exe = $inPath.Source; Where = 'dans le PATH' } }
+$candidates += @{ Exe = (Join-Path $env:ProgramFiles 'CMake\bin\cmake.exe'); Where = 'installe dans Program Files' }
+if ($vsPath) {
+    $candidates += @{ Exe = (Join-Path $vsPath 'Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe'); Where = 'fourni avec Visual Studio' }
+}
+
+$found = $null
+$tooOld = $null
+foreach ($c in $candidates) {
+    if ($c.Exe -and (Test-Path $c.Exe)) {
+        $ver = Get-CMakeVersion $c.Exe
+        $gen = if ($ver -and $ver -ge $minimum) { Get-VsGenerator $c.Exe } else { $null }
+        if ($gen) { $found = $c; $found.Version = $ver; $found.Generator = $gen; break }
+        elseif ($ver -and -not $tooOld) { $tooOld = "$ver ($($c.Exe)) ne connait pas Visual Studio $vsVersion" }
     }
 }
-else {
-    $vsCmake = $null
-    if ($vsPath) { $vsCmake = Join-Path $vsPath 'Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe' }
 
-    if ($vsCmake -and (Test-Path $vsCmake)) {
-        Write-Miss "CMake n'est pas dans le PATH (celui fourni avec Visual Studio existe : $vsCmake)" `
-                   "winget install Kitware.CMake  (puis rouvrir le terminal)"
-    }
-    else {
-        Write-Miss "CMake introuvable" "winget install Kitware.CMake  (puis rouvrir le terminal)"
-    }
+if ($found) {
+    Write-Ok "CMake $($found.Version) $($found.Where) ($($found.Generator)) : $($found.Exe)"
+}
+elseif ($tooOld) {
+    Write-Miss "CMake trop ancien : $tooOld" "winget install Kitware.CMake  (puis rouvrir le terminal)"
+}
+else {
+    Write-Miss "CMake introuvable" "winget install Kitware.CMake  (puis rouvrir le terminal)"
 }
 
 # ---------------------------------------------------------------------------
