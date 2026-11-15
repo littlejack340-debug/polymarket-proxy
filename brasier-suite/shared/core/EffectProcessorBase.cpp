@@ -373,6 +373,7 @@ namespace brasier::core
     {
         auto state = apvts.copyState();
         state.setProperty ("stateVersion", stateVersion, nullptr);
+        state.setProperty ("presetIndex", presets.getCurrentIndex(), nullptr);
 
         if (auto xml = state.createXml())
             copyXmlToBinary (*xml, destData);
@@ -382,6 +383,9 @@ namespace brasier::core
     {
         if (auto xml = getXmlFromBinary (data, sizeInBytes))
             if (xml->hasTagName (apvts.state.getType()))
+            {
                 apvts.replaceState (juce::ValueTree::fromXml (*xml));
+                presets.setCurrentIndexSilently (static_cast<int> (apvts.state.getProperty ("presetIndex", -1)));
+            }
     }
 }

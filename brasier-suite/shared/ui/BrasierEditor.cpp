@@ -362,7 +362,11 @@ namespace brasier::ui
         const float scale = static_cast<float> (getWidth()) / static_cast<float> (baseWidth);
         content.setTransform (juce::AffineTransform::scale (scale));
         content.setBounds (0, 0, baseWidth, baseHeight);
-        processorRef.setEditorScale (scale);
+
+        // On ne memorise que les tailles reellement affichees : certains hotes imposent une
+        // taille provisoire avant d'attacher la fenetre, il ne faut pas la retenir.
+        if (isShowing())
+            processorRef.setEditorScale (scale);
     }
 
     void BrasierEditor::updateEnablement()

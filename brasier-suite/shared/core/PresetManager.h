@@ -49,6 +49,9 @@ namespace brasier::core
         void loadPrevious();
 
         int getCurrentIndex() const noexcept           { return currentIndex; }
+
+        /** Restaure l'indice du preset courant sans toucher aux parametres (rechargement de projet). */
+        void setCurrentIndexSilently (int index) noexcept { currentIndex = juce::jlimit (-1, getNumPresets() - 1, index); }
         juce::String getCurrentName() const;
         bool isFactory (int index) const noexcept      { return index >= 0 && index < getNumFactoryPresets(); }
 

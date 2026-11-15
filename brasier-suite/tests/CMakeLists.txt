@@ -40,3 +40,21 @@ target_link_libraries(BrasierTests
 
 # runDispatchLoopUntil() (laisser le Timer reporter la latence) l'exige
 target_compile_definitions(BrasierTests PRIVATE JUCE_MODAL_LOOPS_PERMITTED=1)
+
+# -----------------------------------------------------------------------------
+# Hote de test : charge les vrais .vst3 compiles (scan, traitement, etat,
+# programmes, editeur), comme le ferait FL Studio.
+#   BrasierHostTest build/vs2022/plugins
+# -----------------------------------------------------------------------------
+juce_add_console_app(BrasierHostTest PRODUCT_NAME "BrasierHostTest")
+target_sources(BrasierHostTest PRIVATE HostTest.cpp)
+target_compile_definitions(BrasierHostTest PRIVATE
+    JUCE_PLUGINHOST_VST3=1
+    JUCE_MODAL_LOOPS_PERMITTED=1)
+target_link_libraries(BrasierHostTest
+    PRIVATE
+        juce::juce_audio_utils
+    PUBLIC
+        brasier_options
+        juce::juce_recommended_config_flags
+        juce::juce_recommended_warning_flags)

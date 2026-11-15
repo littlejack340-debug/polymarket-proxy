@@ -31,11 +31,15 @@ try {
     & cmake --build $buildDir --config $Config --parallel
     if ($LASTEXITCODE -ne 0) { throw "Echec de la compilation" }
 
-    # 3. Tests hors-ligne (optionnels)
+    # 3. Tests hors-ligne puis chargement des vrais .vst3 par un hote de test (optionnels)
     if ($Tests) {
         $testExe = Join-Path $buildDir "tests\BrasierTests_artefacts\$Config\BrasierTests.exe"
         & $testExe
         if ($LASTEXITCODE -ne 0) { throw "Des tests ont echoue" }
+
+        $hostExe = Join-Path $buildDir "tests\BrasierHostTest_artefacts\$Config\BrasierHostTest.exe"
+        & $hostExe (Join-Path $buildDir 'plugins')
+        if ($LASTEXITCODE -ne 0) { throw "Le test de chargement des VST3 a echoue" }
     }
 
     # 4. Recapitulatif
