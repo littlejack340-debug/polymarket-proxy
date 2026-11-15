@@ -44,6 +44,7 @@ include(cmake/BrasierPlugin.cmake)
 
 add_subdirectory(shared)
 add_subdirectory(plugins/Gain)
+add_subdirectory(plugins/Fournaise)
 
 if(BRASIER_BUILD_TESTS)
     add_subdirectory(tests)

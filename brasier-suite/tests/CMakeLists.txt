@@ -3,13 +3,17 @@
 #
 #   cmake -S . -B build -DBRASIER_BUILD_TESTS=ON
 #   cmake --build build --config Release --target BrasierTests
-#   build/tests/BrasierTests_artefacts/Release/BrasierTests(.exe)
+#   build/tests/BrasierTests_artefacts/Release/BrasierTests(.exe) [filtre]
 
 juce_add_console_app(BrasierTests PRODUCT_NAME "BrasierTests")
 
 target_sources(BrasierTests PRIVATE
-    BrasierTests.cpp
-    ${PROJECT_SOURCE_DIR}/plugins/Gain/Source/GainProcessor.cpp)
+    main.cpp
+    TestHelpers.h
+    GainTests.cpp
+    FournaiseTests.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/Gain/Source/GainProcessor.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/Fournaise/Source/FournaiseProcessor.cpp)
 
 target_include_directories(BrasierTests PRIVATE ${PROJECT_SOURCE_DIR}/plugins)
 

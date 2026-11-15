@@ -6,7 +6,7 @@ Suite d'effets audio originale au format **VST3** (+ Standalone) pour FL Studio 
 | Plugin | Rôle | État |
 |---|---|---|
 | **Brasier Gain** | gain + soft-clip, banc d'essai de l'infrastructure commune | ✅ étape 1 |
-| **Brasier Fournaise** | saturateur multi-modèles (tube, transistor, bande, diode) | étape 2 |
+| **Brasier Fournaise** | saturateur multi-modèles (tube, transistor, bande, diode) | ✅ étape 2 |
 | **Brasier Ruban** | delay à bande / analogique, sync tempo, ping-pong, ducking | étape 3 |
 | **Brasier Mue** | pitch shift et formant shift indépendants, mode robot | étape 4 |
 | **Brasier Tamis** | filtre multimode avec résonance saturée, LFO et envelope follower | étape 5 |
@@ -98,6 +98,10 @@ brasier-suite/
 │   │   ├── DryWetMixer.*         mix dry/wet compensé en latence (loi linéaire ou puissance constante)
 │   │   ├── AutoGain.*            égalisation automatique du niveau RMS
 │   │   ├── Oversampler.*         oversampling 1x/2x/4x/8x commutable sans allocation
+│   │   ├── Svf.h                 filtre a variables d'etat TPT (LP/HP/BP/notch/cloche/etageres), lisse
+│   │   ├── CutFilter.h           coupe-bas / coupe-haut avec vraie position "off"
+│   │   ├── OnePole.h             filtre 1 pole, DC blocker
+│   │   ├── Waveshapers.h         courbes de saturation (tube, transistor, bande, diode)
 │   │   └── MathUtils.h
 │   ├── core/                 socle commun des plugins
 │   │   ├── CommonParameters.*    Mix, Output, Auto Gain, Oversampling, Bypass + fabriques de paramètres
@@ -106,7 +110,8 @@ brasier-suite/
 │       ├── BrasierLookAndFeel.*  palette et potards (provisoire, design final à l'étape 6)
 │       └── GenericKnobEditor.*   éditeur auto-généré et redimensionnable
 ├── plugins/
-│   └── Gain/                 Brasier Gain (étape 1)
+│   ├── Gain/                 Brasier Gain (étape 1)
+│   └── Fournaise/            Brasier Fournaise (étape 2)
 ├── tests/                    tests hors-ligne (console)
 └── scripts/                  check-prereqs.ps1, build.ps1, install-vst3.ps1
 ```
