@@ -27,6 +27,12 @@ namespace brasier::dsp
         void setEnabled (bool shouldBeEnabled) noexcept { enabled = shouldBeEnabled; }
         bool isEnabled() const noexcept                 { return enabled; }
 
+        /** Mode statique : au lieu de mesurer, applique un gain connu fourni par le
+            plugin (ex. delay/reverb, ou une mesure RMS n'a pas de sens car le wet
+            est une queue decalee dans le temps). */
+        void setStaticMode (bool shouldBeStatic) noexcept { staticMode = shouldBeStatic; }
+        void setStaticGain (float linearGain) noexcept    { staticGain = juce::jlimit (minGain, maxGain, linearGain); }
+
         /** Mesure reference et wet, puis applique la correction au wet (en place). */
         void process (const juce::dsp::AudioBlock<const float>& reference,
                       juce::dsp::AudioBlock<float>& wet) noexcept;
@@ -44,7 +50,9 @@ namespace brasier::dsp
         float refPower = 0.0f, wetPower = 0.0f;
         float measuredGain = 1.0f;   // derniere correction mesuree (gelee dans les silences)
         float currentGain = 1.0f;    // gain lisse effectivement applique
+        float staticGain = 1.0f;
         int counter = 0;
         bool enabled = false;
+        bool staticMode = false;
     };
 }

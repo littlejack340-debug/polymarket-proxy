@@ -41,7 +41,21 @@ namespace brasier::core
 
     std::unique_ptr<juce::AudioParameterFloat> makePercentParameter (const juce::String& id,
                                                                      const juce::String& name,
-                                                                     float defaultPercent);
+                                                                     float defaultPercent,
+                                                                     float maxPercent = 100.0f);
+
+    /** Temps en millisecondes, echelle logarithmique, affiche "350 ms" ou "1.25 s". */
+    std::unique_ptr<juce::AudioParameterFloat> makeTimeParameter (const juce::String& id,
+                                                                  const juce::String& name,
+                                                                  float minMs, float maxMs, float defaultMs);
+
+    /** Parametre continu generique avec unite et nombre de decimales affichees. */
+    std::unique_ptr<juce::AudioParameterFloat> makeFloatParameter (const juce::String& id,
+                                                                   const juce::String& name,
+                                                                   juce::NormalisableRange<float> range,
+                                                                   float defaultValue,
+                                                                   const juce::String& unit,
+                                                                   int decimals);
 
     std::unique_ptr<juce::AudioParameterFloat> makeFrequencyParameter (const juce::String& id,
                                                                        const juce::String& name,

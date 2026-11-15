@@ -44,15 +44,54 @@ namespace brasier::core
     }
 
     std::unique_ptr<juce::AudioParameterFloat> makePercentParameter (const juce::String& id, const juce::String& name,
-                                                                     float defaultPercent)
+                                                                     float defaultPercent, float maxPercent)
     {
         return std::make_unique<juce::AudioParameterFloat> (
             pid (id), name,
-            juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f),
+            juce::NormalisableRange<float> (0.0f, maxPercent, 0.1f),
             defaultPercent,
             juce::AudioParameterFloatAttributes()
                 .withLabel ("%")
                 .withStringFromValueFunction ([] (float v, int) { return juce::String (v, 1) + " %"; })
+                .withValueFromStringFunction ([] (const juce::String& t) { return t.getFloatValue(); }));
+    }
+
+    std::unique_ptr<juce::AudioParameterFloat> makeTimeParameter (const juce::String& id, const juce::String& name,
+                                                                  float minMs, float maxMs, float defaultMs)
+    {
+        juce::NormalisableRange<float> range (minMs, maxMs);
+        range.setSkewForCentre (std::sqrt (minMs * maxMs));
+
+        return std::make_unique<juce::AudioParameterFloat> (
+            pid (id), name, range, defaultMs,
+            juce::AudioParameterFloatAttributes()
+                .withLabel ("ms")
+                .withStringFromValueFunction ([] (float v, int)
+                {
+                    if (v >= 1000.0f)
+                        return juce::String (v / 1000.0f, 2) + " s";
+                    return juce::String (v, v < 10.0f ? 2 : (v < 100.0f ? 1 : 0)) + " ms";
+                })
+                .withValueFromStringFunction ([] (const juce::String& t)
+                {
+                    const auto s = t.trim().toLowerCase();
+                    const auto v = s.getFloatValue();
+                    return (s.endsWith ("s") && ! s.endsWith ("ms")) ? v * 1000.0f : v;
+                }));
+    }
+
+    std::unique_ptr<juce::AudioParameterFloat> makeFloatParameter (const juce::String& id, const juce::String& name,
+                                                                   juce::NormalisableRange<float> range, float defaultValue,
+                                                                   const juce::String& unit, int decimals)
+    {
+        return std::make_unique<juce::AudioParameterFloat> (
+            pid (id), name, range, defaultValue,
+            juce::AudioParameterFloatAttributes()
+                .withLabel (unit)
+                .withStringFromValueFunction ([unit, decimals] (float v, int)
+                {
+                    return juce::String (v, decimals) + (unit.isNotEmpty() ? " " + unit : juce::String());
+                })
                 .withValueFromStringFunction ([] (const juce::String& t) { return t.getFloatValue(); }));
     }
 

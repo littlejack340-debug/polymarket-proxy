@@ -29,6 +29,18 @@ namespace brasier::dsp
 
         const float channelScale = 1.0f / static_cast<float> (numChannels);
 
+        if (staticMode)
+        {
+            const float target = enabled ? staticGain : 1.0f;
+            for (size_t i = 0; i < numSamples; ++i)
+            {
+                currentGain += gainCoeff * (target - currentGain);
+                for (size_t ch = 0; ch < numChannels; ++ch)
+                    wet.getChannelPointer (ch)[i] *= currentGain;
+            }
+            return;
+        }
+
         for (size_t i = 0; i < numSamples; ++i)
         {
             // Puissance instantanee moyennee sur les canaux

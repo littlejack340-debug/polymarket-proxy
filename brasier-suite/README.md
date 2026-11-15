@@ -7,7 +7,7 @@ Suite d'effets audio originale au format **VST3** (+ Standalone) pour FL Studio 
 |---|---|---|
 | **Brasier Gain** | gain + soft-clip, banc d'essai de l'infrastructure commune | ✅ étape 1 |
 | **Brasier Fournaise** | saturateur multi-modèles (tube, transistor, bande, diode) | ✅ étape 2 |
-| **Brasier Ruban** | delay à bande / analogique, sync tempo, ping-pong, ducking | étape 3 |
+| **Brasier Ruban** | delay à bande / analogique, sync tempo, ping-pong, ducking | ✅ étape 3 |
 | **Brasier Mue** | pitch shift et formant shift indépendants, mode robot | étape 4 |
 | **Brasier Tamis** | filtre multimode avec résonance saturée, LFO et envelope follower | étape 5 |
 | **Brasier Remous** | chorus, flanger, phaser, tremolo | étape 5 |
@@ -102,6 +102,10 @@ brasier-suite/
 │   │   ├── CutFilter.h           coupe-bas / coupe-haut avec vraie position "off"
 │   │   ├── OnePole.h             filtre 1 pole, DC blocker
 │   │   ├── Waveshapers.h         courbes de saturation (tube, transistor, bande, diode)
+│   │   ├── DelayLine.h           ligne de retard, lecture fractionnaire cubique
+│   │   ├── Lfo.h                 LFO (7 formes, recalage sur le transport), aleatoire temps reel
+│   │   ├── TempoSync.h           divisions de mesure (triolets, pointees)
+│   │   ├── EnvelopeFollower.h    suiveur d'enveloppe attaque/relachement
 │   │   └── MathUtils.h
 │   ├── core/                 socle commun des plugins
 │   │   ├── CommonParameters.*    Mix, Output, Auto Gain, Oversampling, Bypass + fabriques de paramètres
@@ -111,7 +115,8 @@ brasier-suite/
 │       └── GenericKnobEditor.*   éditeur auto-généré et redimensionnable
 ├── plugins/
 │   ├── Gain/                 Brasier Gain (étape 1)
-│   └── Fournaise/            Brasier Fournaise (étape 2)
+│   ├── Fournaise/            Brasier Fournaise (étape 2)
+│   └── Ruban/                Brasier Ruban (étape 3)
 ├── tests/                    tests hors-ligne (console)
 └── scripts/                  check-prereqs.ps1, build.ps1, install-vst3.ps1
 ```

@@ -92,13 +92,15 @@ namespace brasier::core
         prepareEffect (spec);
 
         // 3. Chemin dry : retard maximal = pire cas d'oversampling + latence de l'effet
-        const int maxLatency = (options.common.withOversampling ? overSampler.getMaxLatencySamples() : 0)
+        const bool osAddsLatency = options.common.withOversampling && ! options.oversamplingLatencyHandledByEffect;
+        const int maxLatency = (osAddsLatency ? overSampler.getMaxLatencySamples() : 0)
                              + getEffectLatencySamples();
 
         dryWet.prepare (sampleRate, numChannels, preparedBlockSize, maxLatency);
         dryWet.setMixLaw (options.mixLaw);
 
         autoGain.prepare (sampleRate);
+        autoGain.setStaticMode (options.autoGainMode == AutoGainMode::fixed);
         outputGain.prepare (sampleRate, 0.03);
 
         // 4. Valeurs initiales sans rampe
@@ -127,7 +129,8 @@ namespace brasier::core
 
     int EffectProcessorBase::computeTotalLatency() const noexcept
     {
-        const int osLatency = options.common.withOversampling ? overSampler.getLatencySamples() : 0;
+        const bool osAddsLatency = options.common.withOversampling && ! options.oversamplingLatencyHandledByEffect;
+        const int osLatency = osAddsLatency ? overSampler.getLatencySamples() : 0;
         return osLatency + getEffectLatencySamples();
     }
 
@@ -215,6 +218,8 @@ namespace brasier::core
         dryWet.setMix (bypassed ? 0.0f : mixParam->load() * 0.01f);
         outputGain.setTarget (bypassed ? 1.0f : dsp::dbToGain (outputParam->load()));
         autoGain.setEnabled (autoGainParam->load() > 0.5f);
+        if (options.autoGainMode == AutoGainMode::fixed)
+            autoGain.setStaticGain (dsp::dbToGain (getStaticAutoGainDb()));
 
         const int numChannels = juce::jmin (context.numChannels, buffer.getNumChannels());
         juce::dsp::AudioBlock<float> fullBlock (buffer.getArrayOfWritePointers(),

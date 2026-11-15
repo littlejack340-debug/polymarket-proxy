@@ -62,12 +62,24 @@ namespace brasier::core
                                 private juce::Timer
     {
     public:
+        enum class AutoGainMode
+        {
+            measured,   // mesure RMS entree / wet (saturation, filtre, modulation, pitch)
+            fixed       // gain fourni par getStaticAutoGainDb() (delay, reverb)
+        };
+
         struct Options
         {
             juce::String name;
             CommonParameterOptions common;
             dsp::DryWetMixer::MixLaw mixLaw = dsp::DryWetMixer::MixLaw::linear;
+            AutoGainMode autoGainMode = AutoGainMode::measured;
             double tailSeconds = 0.0;
+
+            /** Vrai si l'effet utilise l'oversampler a l'interieur d'une boucle et
+                compense lui-meme sa latence (delay a bande) : rien n'est alors
+                reporte a l'hote pour l'oversampling. */
+            bool oversamplingLatencyHandledByEffect = false;
         };
 
         EffectProcessorBase (Options options,
@@ -127,6 +139,10 @@ namespace brasier::core
         /** Latence propre a l'effet (hors oversampling), en echantillons. Doit etre
             stable apres prepareEffect(). */
         virtual int getEffectLatencySamples() const { return 0; }
+
+        /** Gain d'auto-gain (dB) en mode AutoGainMode::fixed. Appele a chaque bloc
+            depuis le thread audio : doit etre un simple calcul. */
+        virtual float getStaticAutoGainDb() const { return 0.0f; }
 
         dsp::Oversampler& oversampler() noexcept { return overSampler; }
 
