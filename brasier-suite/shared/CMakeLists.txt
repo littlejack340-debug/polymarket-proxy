@@ -32,7 +32,8 @@ add_library(brasier::core ALIAS brasier_core)
 
 target_sources(brasier_core INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/core/CommonParameters.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/EffectProcessorBase.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/EffectProcessorBase.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/PresetManager.cpp)
 
 target_include_directories(brasier_core INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(brasier_core INTERFACE brasier::dsp juce::juce_audio_processors)
@@ -43,7 +44,9 @@ add_library(brasier::ui ALIAS brasier_ui)
 
 target_sources(brasier_ui INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/BrasierLookAndFeel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/GenericKnobEditor.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/BrasierEditor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/PresetBar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/VuMeter.cpp)
 
 target_include_directories(brasier_ui INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(brasier_ui INTERFACE juce::juce_audio_processors juce::juce_gui_basics)
+target_link_libraries(brasier_ui INTERFACE brasier::core juce::juce_audio_processors juce::juce_gui_basics)

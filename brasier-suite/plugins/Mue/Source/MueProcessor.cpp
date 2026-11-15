@@ -1,6 +1,7 @@
 #include "MueProcessor.h"
+#include "FactoryPresets.h"
 
-#include "ui/GenericKnobEditor.h"
+#include "ui/BrasierEditor.h"
 
 namespace brasier::mue
 {
@@ -13,6 +14,7 @@ namespace brasier::mue
             o.common.withOversampling = false;   // aucun etage non lineaire
             o.mixLaw = dsp::DryWetMixer::MixLaw::equalPower;   // dry et voix decalee sont decorreles
             o.autoGainMode = core::EffectProcessorBase::AutoGainMode::measured;
+            o.factoryPresets = makeFactoryPresets();
             return o;
         }
 
@@ -66,12 +68,18 @@ namespace brasier::mue
 
     juce::AudioProcessorEditor* MueProcessor::createEditor()
     {
-        ui::GenericKnobEditor::Options o;
-        o.title = "BRASIER  MUE";
-        o.subtitle = "pitch / formant";
-        o.footerParameterIds = core::getCommonParameterIds();
-        o.hiddenParameterIds = { core::ids::bypass };
-        return new ui::GenericKnobEditor (*this, apvts, o);
+        using namespace ui;
+        using S = ControlSpec::Style;
+        EditorSpec e;
+        e.pluginName = "MUE";
+        e.tagline = fr ("pitch / formant");
+        e.accent = juce::Colour (0xff9b6bd6);
+        e.rows = {
+            { SectionSpec { "Hauteur", { { ids::pitch, S::largeKnob, true, {}, ids::robot, 0 } }, 1.0f },
+              SectionSpec { "Formants", { { ids::formant, S::largeKnob, true } }, 1.0f } },
+            { SectionSpec { "Robot", { { ids::robot, S::toggle }, { ids::robotNote, S::selector, false, {}, ids::robot, 1 } }, 1.2f },
+              SectionSpec { "Moteur", { { ids::latency, S::selector, false, fr ("Latence") } }, 0.8f } } };
+        return new BrasierEditor (*this, std::move (e));
     }
 
     void MueProcessor::prepareEffect (const core::EffectSpec& spec)

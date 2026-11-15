@@ -1,7 +1,8 @@
 #include "GainProcessor.h"
+#include "FactoryPresets.h"
 
 #include "dsp/MathUtils.h"
-#include "ui/GenericKnobEditor.h"
+#include "ui/BrasierEditor.h"
 
 namespace brasier::gain
 {
@@ -25,6 +26,7 @@ namespace brasier::gain
         o.common.withOversampling = true;
         o.common.defaultOversamplingIndex = 1;   // 2x
         o.mixLaw = dsp::DryWetMixer::MixLaw::linear;
+        o.factoryPresets = makeFactoryPresets();
         return o;
     }
 
@@ -37,12 +39,15 @@ namespace brasier::gain
 
     juce::AudioProcessorEditor* GainProcessor::createEditor()
     {
-        ui::GenericKnobEditor::Options o;
-        o.title = "BRASIER  GAIN";
-        o.subtitle = "outil de test - etape 1";
-        o.footerParameterIds = core::getCommonParameterIds();
-        o.hiddenParameterIds = { core::ids::bypass };
-        return new ui::GenericKnobEditor (*this, apvts, o);
+        using namespace ui;
+        using S = ControlSpec::Style;
+        EditorSpec e;
+        e.pluginName = "GAIN";
+        e.tagline = fr ("outil de test");
+        e.accent = juce::Colour (0xffe0a030);
+        e.rows = { { SectionSpec { "Gain", { { ids::gain, S::largeKnob, true } }, 1.0f },
+                     SectionSpec { "Couleur", { { ids::clip, S::toggle } }, 1.0f } } };
+        return new BrasierEditor (*this, std::move (e));
     }
 
     void GainProcessor::prepareEffect (const core::EffectSpec& spec)

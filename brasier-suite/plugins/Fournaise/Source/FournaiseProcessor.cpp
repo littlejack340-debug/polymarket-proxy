@@ -1,8 +1,9 @@
 #include "FournaiseProcessor.h"
+#include "FactoryPresets.h"
 
 #include "dsp/MathUtils.h"
 #include "dsp/Waveshapers.h"
-#include "ui/GenericKnobEditor.h"
+#include "ui/BrasierEditor.h"
 
 namespace brasier::fournaise
 {
@@ -27,6 +28,7 @@ namespace brasier::fournaise
             o.common.withOversampling = true;
             o.common.defaultOversamplingIndex = 2;   // 4x
             o.mixLaw = dsp::DryWetMixer::MixLaw::linear;
+            o.factoryPresets = makeFactoryPresets();
             return o;
         }
     }
@@ -60,12 +62,18 @@ namespace brasier::fournaise
 
     juce::AudioProcessorEditor* FournaiseProcessor::createEditor()
     {
-        ui::GenericKnobEditor::Options o;
-        o.title = "BRASIER  FOURNAISE";
-        o.subtitle = "saturateur analogique";
-        o.footerParameterIds = core::getCommonParameterIds();
-        o.hiddenParameterIds = { core::ids::bypass };
-        return new ui::GenericKnobEditor (*this, apvts, o);
+        using namespace ui;
+        using S = ControlSpec::Style;
+        EditorSpec e;
+        e.pluginName = "FOURNAISE";
+        e.tagline = fr ("saturateur analogique");
+        e.accent = juce::Colour (0xffe2552b);
+        e.rows = {
+            { SectionSpec { "Saturation", { { ids::model, S::selector }, { ids::drive, S::largeKnob }, { ids::punish, S::toggle } }, 1.5f },
+              SectionSpec { fr ("TONALITÉ"), { { ids::tone, S::knob, true } }, 0.6f } },
+            { SectionSpec { "Filtres avant", { { ids::preLowCut, S::knob }, { ids::preHighCut, S::knob } }, 1.0f },
+              SectionSpec { fr ("FILTRES APRÈS"), { { ids::postLowCut, S::knob }, { ids::postHighCut, S::knob } }, 1.0f } } };
+        return new BrasierEditor (*this, std::move (e));
     }
 
     //==============================================================================

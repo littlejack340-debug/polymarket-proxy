@@ -1,9 +1,10 @@
 #include "RubanProcessor.h"
+#include "FactoryPresets.h"
 
 #include "dsp/MathUtils.h"
 #include "dsp/TempoSync.h"
 #include "dsp/Waveshapers.h"
-#include "ui/GenericKnobEditor.h"
+#include "ui/BrasierEditor.h"
 
 namespace brasier::ruban
 {
@@ -28,6 +29,7 @@ namespace brasier::ruban
             o.autoGainMode = core::EffectProcessorBase::AutoGainMode::fixed;
             o.oversamplingLatencyHandledByEffect = true;
             o.tailSeconds = 10.0;
+            o.factoryPresets = makeFactoryPresets();
             return o;
         }
     }
@@ -72,12 +74,19 @@ namespace brasier::ruban
 
     juce::AudioProcessorEditor* RubanProcessor::createEditor()
     {
-        ui::GenericKnobEditor::Options o;
-        o.title = "BRASIER  RUBAN";
-        o.subtitle = "delay a bande";
-        o.footerParameterIds = core::getCommonParameterIds();
-        o.hiddenParameterIds = { core::ids::bypass };
-        return new ui::GenericKnobEditor (*this, apvts, o);
+        using namespace ui;
+        using S = ControlSpec::Style;
+        EditorSpec e;
+        e.pluginName = "RUBAN";
+        e.tagline = fr ("delay à bande");
+        e.accent = juce::Colour (0xffc99a4a);
+        e.rows = {
+            { SectionSpec { "Temps", { { ids::sync, S::toggle }, { ids::time, S::knob, false, {}, ids::sync, 0 }, { ids::division, S::selector, false, {}, ids::sync, 1 } }, 1.3f },
+              SectionSpec { "Bande", { { ids::feedback, S::knob }, { ids::saturation, S::knob }, { ids::wow, S::knob }, { ids::flutter, S::knob } }, 1.7f } },
+            { SectionSpec { "Filtres de boucle", { { ids::lowCut, S::knob }, { ids::highCut, S::knob } }, 1.0f },
+              SectionSpec { fr ("STÉRÉO"), { { ids::mode, S::selector }, { ids::spread, S::knob, false, {}, ids::mode, 1 } }, 1.0f },
+              SectionSpec { "Ducking", { { ids::duck, S::knob }, { ids::duckThreshold, S::knob } }, 1.0f } } };
+        return new BrasierEditor (*this, std::move (e));
     }
 
     float RubanProcessor::getStaticAutoGainDb() const

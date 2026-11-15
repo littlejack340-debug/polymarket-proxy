@@ -20,7 +20,8 @@ target_compile_definitions(brasier_options INTERFACE
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0
-    JUCE_STRICT_REFCOUNTEDPOINTER=1)
+    JUCE_STRICT_REFCOUNTEDPOINTER=1
+    BRASIER_VERSION_STRING="${PROJECT_VERSION}")
 if(MSVC)
     # Sources en UTF-8 (accents dans les commentaires / textes d'interface)
     target_compile_options(brasier_options INTERFACE /utf-8)

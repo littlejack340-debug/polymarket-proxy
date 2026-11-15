@@ -6,6 +6,7 @@
 #include <juce_dsp/juce_dsp.h>
 
 #include "CommonParameters.h"
+#include "PresetManager.h"
 #include "dsp/AutoGain.h"
 #include "dsp/DryWetMixer.h"
 #include "dsp/LinearSmoother.h"
@@ -80,6 +81,17 @@ namespace brasier::core
                 compense lui-meme sa latence (delay a bande) : rien n'est alors
                 reporte a l'hote pour l'oversampling. */
             bool oversamplingLatencyHandledByEffect = false;
+
+            /** Presets d'usine du plugin (aussi exposes comme "programmes" a l'hote). */
+            std::vector<FactoryPreset> factoryPresets;
+        };
+
+        /** Niveaux mesures sur le dernier bloc (pour les VU-metres), en carre moyen lineaire. */
+        struct MeterLevels
+        {
+            float inputMeanSquare[2] {};
+            float outputMeanSquare[2] {};
+            float outputPeak = 0.0f;
         };
 
         EffectProcessorBase (Options options,
@@ -88,6 +100,14 @@ namespace brasier::core
 
         juce::AudioProcessorValueTreeState& getValueTreeState() noexcept { return apvts; }
         const Options& getOptions() const noexcept                       { return options; }
+        PresetManager& getPresetManager() noexcept                       { return presets; }
+
+        /** Lecture des niveaux (thread message, interface). */
+        MeterLevels getMeterLevels() const noexcept;
+
+        /** Taille de l'interface memorisee dans l'etat du plugin (thread message). */
+        float getEditorScale() const;
+        void setEditorScale (float scale);
 
         //==============================================================================
         const juce::String getName() const override   { return options.name; }
@@ -108,10 +128,10 @@ namespace brasier::core
         bool producesMidi() const override           { return false; }
         bool isMidiEffect() const override           { return false; }
 
-        int getNumPrograms() override                               { return 1; }
-        int getCurrentProgram() override                            { return 0; }
-        void setCurrentProgram (int) override                       {}
-        const juce::String getProgramName (int) override            { return {}; }
+        int getNumPrograms() override;
+        int getCurrentProgram() override;
+        void setCurrentProgram (int index) override;
+        const juce::String getProgramName (int index) override;
         void changeProgramName (int, const juce::String&) override  {}
 
         void getStateInformation (juce::MemoryBlock& destData) override;
@@ -164,6 +184,7 @@ namespace brasier::core
 
         void processInternal (juce::AudioBuffer<float>& buffer, bool forceBypass) noexcept;
         void processChunk (juce::dsp::AudioBlock<float> block) noexcept;
+        void measureLevels (const juce::AudioBuffer<float>& buffer, int numChannels, bool input) noexcept;
         void updateHostInfo() noexcept;
         void updateOversampling() noexcept;
         void updateLatency() noexcept;
@@ -191,6 +212,14 @@ namespace brasier::core
 
         // Latence calculee dans le thread audio, reportee a l'hote par le thread message
         std::atomic<int> pendingLatency { 0 };
+
+        // Changement de programme demande hors du thread message : applique par le Timer
+        std::atomic<int> pendingProgram { -1 };
+
+        // VU-metres (ecrits par le thread audio, lus par l'interface)
+        std::atomic<float> inputLevel[2] {}, outputLevel[2] {}, outputPeak { 0.0f };
+
+        PresetManager presets;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EffectProcessorBase)
     };

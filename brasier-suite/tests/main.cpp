@@ -42,7 +42,7 @@ namespace
         p->prepareToPlay (brasier::tests::sampleRate, brasier::tests::blockSize);
 
         std::unique_ptr<juce::AudioProcessorEditor> editor (p->createEditorAndMakeActive());
-        editor->setSize (width, width * 9 / 16);
+        editor->setSize (width, width * 3 / 5);
 
         const auto image = editor->createComponentSnapshot (editor->getLocalBounds(), true, 2.0f);
         file.deleteFile();

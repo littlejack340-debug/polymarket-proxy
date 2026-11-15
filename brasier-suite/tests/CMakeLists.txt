@@ -15,6 +15,7 @@ target_sources(BrasierTests PRIVATE
     RubanTests.cpp
     MueTests.cpp
     Step5Tests.cpp
+    Step7Tests.cpp
     ${PROJECT_SOURCE_DIR}/plugins/Gain/Source/GainProcessor.cpp
     ${PROJECT_SOURCE_DIR}/plugins/Fournaise/Source/FournaiseProcessor.cpp
     ${PROJECT_SOURCE_DIR}/plugins/Ruban/Source/RubanProcessor.cpp

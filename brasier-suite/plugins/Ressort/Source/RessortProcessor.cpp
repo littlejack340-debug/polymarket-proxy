@@ -1,8 +1,9 @@
 #include "RessortProcessor.h"
+#include "FactoryPresets.h"
 
 #include "dsp/MathUtils.h"
 #include "dsp/Waveshapers.h"
-#include "ui/GenericKnobEditor.h"
+#include "ui/BrasierEditor.h"
 
 namespace brasier::ressort
 {
@@ -20,6 +21,7 @@ namespace brasier::ressort
             o.mixLaw = dsp::DryWetMixer::MixLaw::equalPower;
             o.autoGainMode = core::EffectProcessorBase::AutoGainMode::fixed;
             o.tailSeconds = 12.0;
+            o.factoryPresets = makeFactoryPresets();
             return o;
         }
 
@@ -58,12 +60,18 @@ namespace brasier::ressort
 
     juce::AudioProcessorEditor* RessortProcessor::createEditor()
     {
-        ui::GenericKnobEditor::Options o;
-        o.title = "BRASIER  RESSORT";
-        o.subtitle = "reverb ressort / plaque";
-        o.footerParameterIds = core::getCommonParameterIds();
-        o.hiddenParameterIds = { core::ids::bypass };
-        return new ui::GenericKnobEditor (*this, apvts, o);
+        using namespace ui;
+        using S = ControlSpec::Style;
+        EditorSpec e;
+        e.pluginName = "RESSORT";
+        e.tagline = fr ("reverb ressort / plaque");
+        e.accent = juce::Colour (0xff7cb85a);
+        e.rows = {
+            { SectionSpec { fr ("RÉVERBÉRATION"), { { ids::type, S::selector }, { ids::decay, S::knob }, { ids::predelay, S::knob },
+                                                    { ids::damping, S::knob }, { ids::tension, S::knob, false, {}, ids::type, 0 } }, 1.0f } },
+            { SectionSpec { "Couleur", { { ids::drive, S::knob }, { ids::lowCut, S::knob }, { ids::highCut, S::knob } }, 1.3f },
+              SectionSpec { "Image", { { ids::width, S::knob } }, 0.6f } } };
+        return new BrasierEditor (*this, std::move (e));
     }
 
     float RessortProcessor::getStaticAutoGainDb() const

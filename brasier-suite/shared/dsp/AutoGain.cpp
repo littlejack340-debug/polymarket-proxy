@@ -41,17 +41,21 @@ namespace brasier::dsp
             return;
         }
 
+        // Acces direct aux canaux (mono / stereo)
+        const float* ref0 = reference.getChannelPointer (0);
+        const float* ref1 = numChannels > 1 ? reference.getChannelPointer (1) : ref0;
+        float* wet0 = wet.getChannelPointer (0);
+        float* wet1 = numChannels > 1 ? wet.getChannelPointer (1) : nullptr;
+
         for (size_t i = 0; i < numSamples; ++i)
         {
             // Puissance instantanee moyennee sur les canaux
-            float refSq = 0.0f, wetSq = 0.0f;
-
-            for (size_t ch = 0; ch < numChannels; ++ch)
+            float refSq = ref0[i] * ref0[i];
+            float wetSq = wet0[i] * wet0[i];
+            if (wet1 != nullptr)
             {
-                const float r = reference.getSample (static_cast<int> (ch), static_cast<int> (i));
-                const float w = wet.getSample (static_cast<int> (ch), static_cast<int> (i));
-                refSq += r * r;
-                wetSq += w * w;
+                refSq += ref1[i] * ref1[i];
+                wetSq += wet1[i] * wet1[i];
             }
 
             refPower += powerCoeff * (refSq * channelScale - refPower);
@@ -68,8 +72,9 @@ namespace brasier::dsp
             const float target = enabled ? measuredGain : 1.0f;
             currentGain += gainCoeff * (target - currentGain);
 
-            for (size_t ch = 0; ch < numChannels; ++ch)
-                wet.getChannelPointer (ch)[i] *= currentGain;
+            wet0[i] *= currentGain;
+            if (wet1 != nullptr)
+                wet1[i] *= currentGain;
         }
 
         // Evite les denormaux quand le signal s'eteint

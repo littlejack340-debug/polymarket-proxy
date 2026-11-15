@@ -1,9 +1,10 @@
 #include "TamisProcessor.h"
+#include "FactoryPresets.h"
 
 #include "dsp/MathUtils.h"
 #include "dsp/TempoSync.h"
 #include "dsp/Waveshapers.h"
-#include "ui/GenericKnobEditor.h"
+#include "ui/BrasierEditor.h"
 
 namespace brasier::tamis
 {
@@ -30,6 +31,7 @@ namespace brasier::tamis
             o.common.withOversampling = true;
             o.common.defaultOversamplingIndex = 1;   // 2x
             o.mixLaw = dsp::DryWetMixer::MixLaw::linear;
+            o.factoryPresets = makeFactoryPresets();
             return o;
         }
     }
@@ -73,12 +75,21 @@ namespace brasier::tamis
 
     juce::AudioProcessorEditor* TamisProcessor::createEditor()
     {
-        ui::GenericKnobEditor::Options o;
-        o.title = "BRASIER  TAMIS";
-        o.subtitle = "filtre multimode";
-        o.footerParameterIds = core::getCommonParameterIds();
-        o.hiddenParameterIds = { core::ids::bypass };
-        return new ui::GenericKnobEditor (*this, apvts, o);
+        using namespace ui;
+        using S = ControlSpec::Style;
+        EditorSpec e;
+        e.pluginName = "TAMIS";
+        e.tagline = fr ("filtre multimode");
+        e.accent = juce::Colour (0xff3fb8a6);
+        e.rows = {
+            { SectionSpec { "Filtre", { { ids::type, S::selector }, { ids::slope, S::selector }, { ids::cutoff, S::knob },
+                                        { ids::resonance, S::knob }, { ids::drive, S::knob } }, 1.0f } },
+            { SectionSpec { "LFO", { { ids::lfoAmount, S::knob, true, "Amount" }, { ids::lfoShape, S::selector, false, "Shape" },
+                                     { ids::lfoSync, S::toggle, false, "Sync" }, { ids::lfoRate, S::knob, false, "Rate", ids::lfoSync, 0 },
+                                     { ids::lfoDivision, S::selector, false, "Division", ids::lfoSync, 1 } }, 1.6f },
+              SectionSpec { "Enveloppe", { { ids::envAmount, S::knob, true, "Amount" }, { ids::envAttack, S::smallKnob, false, "Attack" },
+                                           { ids::envRelease, S::smallKnob, false, "Release" } }, 1.0f } } };
+        return new BrasierEditor (*this, std::move (e));
     }
 
     void TamisProcessor::prepareEffect (const core::EffectSpec& spec)

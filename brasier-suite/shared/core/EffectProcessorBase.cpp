@@ -27,8 +27,11 @@ namespace brasier::core
                                               juce::AudioProcessorValueTreeState::ParameterLayout pluginParameters)
         : juce::AudioProcessor (makeBuses()),
           apvts (*this, nullptr, "BrasierState", buildLayout (std::move (pluginParameters), opts.common)),
-          options (std::move (opts))
+          options (std::move (opts)),
+          presets (apvts, options.name, options.factoryPresets)
     {
+        presets.refreshUserPresets();
+
         mixParam      = apvts.getRawParameterValue (ids::mix);
         outputParam   = apvts.getRawParameterValue (ids::output);
         autoGainParam = apvts.getRawParameterValue (ids::autoGain);
@@ -140,6 +143,85 @@ namespace brasier::core
 
         if (latency != getLatencySamples())
             setLatencySamples (latency);
+
+        const int program = pendingProgram.exchange (-1);
+        if (program >= 0)
+            presets.loadFactoryPreset (program);
+    }
+
+    //==============================================================================
+    int EffectProcessorBase::getNumPrograms()
+    {
+        return juce::jmax (1, presets.getNumFactoryPresets());
+    }
+
+    int EffectProcessorBase::getCurrentProgram()
+    {
+        return presets.isFactory (presets.getCurrentIndex()) ? presets.getCurrentIndex() : 0;
+    }
+
+    void EffectProcessorBase::setCurrentProgram (int index)
+    {
+        if (! juce::isPositiveAndBelow (index, presets.getNumFactoryPresets()))
+            return;
+
+        // Les presets passent par les parametres : on ne le fait que sur le thread message
+        if (juce::MessageManager::existsAndIsCurrentThread())
+            presets.loadFactoryPreset (index);
+        else
+            pendingProgram.store (index);
+    }
+
+    const juce::String EffectProcessorBase::getProgramName (int index)
+    {
+        if (! juce::isPositiveAndBelow (index, presets.getNumFactoryPresets()))
+            return "Init";
+
+        const auto& p = presets.getFactoryPreset (index);
+        return p.category.isNotEmpty() ? p.category + " - " + p.name : p.name;
+    }
+
+    //==============================================================================
+    void EffectProcessorBase::measureLevels (const juce::AudioBuffer<float>& buffer, int numChannels, bool input) noexcept
+    {
+        const int n = buffer.getNumSamples();
+        if (n == 0)
+            return;
+
+        for (int ch = 0; ch < 2; ++ch)
+        {
+            const int src = juce::jmin (ch, numChannels - 1);
+            const float* data = buffer.getReadPointer (src);
+            float sum = 0.0f;
+            for (int i = 0; i < n; ++i)
+                sum += data[i] * data[i];
+            (input ? inputLevel : outputLevel)[ch].store (sum / static_cast<float> (n), std::memory_order_relaxed);
+        }
+
+        if (! input)
+            outputPeak.store (buffer.getMagnitude (0, n), std::memory_order_relaxed);
+    }
+
+    EffectProcessorBase::MeterLevels EffectProcessorBase::getMeterLevels() const noexcept
+    {
+        MeterLevels m;
+        for (int ch = 0; ch < 2; ++ch)
+        {
+            m.inputMeanSquare[ch] = inputLevel[ch].load (std::memory_order_relaxed);
+            m.outputMeanSquare[ch] = outputLevel[ch].load (std::memory_order_relaxed);
+        }
+        m.outputPeak = outputPeak.load (std::memory_order_relaxed);
+        return m;
+    }
+
+    float EffectProcessorBase::getEditorScale() const
+    {
+        return static_cast<float> (apvts.state.getProperty ("editorScale", 1.0f));
+    }
+
+    void EffectProcessorBase::setEditorScale (float scale)
+    {
+        apvts.state.setProperty ("editorScale", scale, nullptr);
     }
 
     //==============================================================================
@@ -231,6 +313,8 @@ namespace brasier::core
             autoGain.setStaticGain (dsp::dbToGain (getStaticAutoGainDb()));
 
         const int numChannels = juce::jmin (context.numChannels, buffer.getNumChannels());
+        measureLevels (buffer, numChannels, true);
+
         juce::dsp::AudioBlock<float> fullBlock (buffer.getArrayOfWritePointers(),
                                                 static_cast<size_t> (numChannels),
                                                 static_cast<size_t> (numSamples));
@@ -246,6 +330,8 @@ namespace brasier::core
             // La position du transport avance avec chaque morceau (LFO synchronises)
             context.ppqPosition += static_cast<double> (length) / context.sampleRate * context.bpm / 60.0;
         }
+
+        measureLevels (buffer, numChannels, false);
     }
 
     void EffectProcessorBase::processChunk (juce::dsp::AudioBlock<float> block) noexcept

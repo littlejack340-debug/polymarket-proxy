@@ -1,7 +1,8 @@
 #include "RemousProcessor.h"
+#include "FactoryPresets.h"
 
 #include "dsp/TempoSync.h"
-#include "ui/GenericKnobEditor.h"
+#include "ui/BrasierEditor.h"
 
 namespace brasier::remous
 {
@@ -15,6 +16,7 @@ namespace brasier::remous
             o.common.defaultOversamplingIndex = 1;   // 2x
             o.mixLaw = dsp::DryWetMixer::MixLaw::linear;
             o.tailSeconds = 0.1;
+            o.factoryPresets = makeFactoryPresets();
             return o;
         }
 
@@ -52,12 +54,17 @@ namespace brasier::remous
 
     juce::AudioProcessorEditor* RemousProcessor::createEditor()
     {
-        ui::GenericKnobEditor::Options o;
-        o.title = "BRASIER  REMOUS";
-        o.subtitle = "modulation analogique";
-        o.footerParameterIds = core::getCommonParameterIds();
-        o.hiddenParameterIds = { core::ids::bypass };
-        return new ui::GenericKnobEditor (*this, apvts, o);
+        using namespace ui;
+        using S = ControlSpec::Style;
+        EditorSpec e;
+        e.pluginName = "REMOUS";
+        e.tagline = fr ("modulation analogique");
+        e.accent = juce::Colour (0xff4a90d9);
+        e.rows = {
+            { SectionSpec { "Effet", { { ids::mode, S::selector }, { ids::depth, S::knob }, { ids::feedback, S::knob, true } }, 1.4f },
+              SectionSpec { "Vitesse", { { ids::sync, S::toggle }, { ids::rate, S::knob, false, {}, ids::sync, 0 }, { ids::division, S::selector, false, {}, ids::sync, 1 } }, 1.2f } },
+            { SectionSpec { fr ("CARACTÈRE"), { { ids::shape, S::selector }, { ids::spread, S::knob }, { ids::character, S::knob } }, 1.0f } } };
+        return new BrasierEditor (*this, std::move (e));
     }
 
     dsp::AnalogModulator::Settings RemousProcessor::readSettings (const core::ProcessContext& ctx) const noexcept
