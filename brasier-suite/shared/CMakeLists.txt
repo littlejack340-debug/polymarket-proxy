@@ -19,7 +19,9 @@ target_sources(brasier_dsp INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/dsp/DryWetMixer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dsp/Oversampler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dsp/PitchDetector.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/dsp/PsolaShifter.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/dsp/PsolaShifter.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dsp/AnalogModulator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dsp/Reverbs.cpp)
 
 target_include_directories(brasier_dsp INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(brasier_dsp INTERFACE juce::juce_dsp)

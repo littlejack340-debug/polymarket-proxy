@@ -59,8 +59,9 @@ namespace brasier::core
     std::unique_ptr<juce::AudioParameterFloat> makeTimeParameter (const juce::String& id, const juce::String& name,
                                                                   float minMs, float maxMs, float defaultMs)
     {
+        // Milieu de course : moyenne geometrique (ou 20 % de la plage si le minimum vaut 0)
         juce::NormalisableRange<float> range (minMs, maxMs);
-        range.setSkewForCentre (std::sqrt (minMs * maxMs));
+        range.setSkewForCentre (minMs > 0.0f ? std::sqrt (minMs * maxMs) : minMs + 0.2f * (maxMs - minMs));
 
         return std::make_unique<juce::AudioParameterFloat> (
             pid (id), name, range, defaultMs,

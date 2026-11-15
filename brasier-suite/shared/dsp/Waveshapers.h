@@ -13,7 +13,7 @@ namespace brasier::dsp
     {
         /** tanh rapide (approximation de Pade 3/2), exacte a ~2 % pres, lisse
             jusqu'a la derivee premiere (pas de cassure a |x| = 3). */
-        inline float fastTanh (float x) noexcept
+        constexpr float fastTanh (float x) noexcept
         {
             if (x > 3.0f)  return 1.0f;
             if (x < -3.0f) return -1.0f;
@@ -26,10 +26,13 @@ namespace brasier::dsp
             negative, ce qui produit surtout des harmoniques PAIRES (chaleur). */
         inline float tube (float x) noexcept
         {
+            // Constantes calculees avec la MEME fonction que celle utilisee ci-dessous :
+            // tube(0) vaut exactement 0 (aucun continu) et la pente a l'origine vaut 1.
             constexpr float bias = 0.3f;
-            constexpr float tanhBias = 0.29131261f;                          // tanh(0.3)
-            constexpr float slopeNorm = 1.0f / (1.0f - tanhBias * tanhBias); // pente 1 a l'origine
-            return (fastTanh (x + bias) - tanhBias) * slopeNorm;
+            constexpr float h = 1.0e-3f;
+            constexpr float atBias = fastTanh (bias);
+            constexpr float slopeNorm = 2.0f * h / (fastTanh (bias + h) - fastTanh (bias - h));
+            return (fastTanh (x + bias) - atBias) * slopeNorm;
         }
 
         /** Transistor : ecretage cubique a genou dur et plateau franc, symetrique :

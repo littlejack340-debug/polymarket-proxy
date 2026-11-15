@@ -71,6 +71,7 @@ namespace brasier::dsp
         void setShape (Shape s) noexcept        { shape = s; }
         void setFrequency (double hz) noexcept   { increment = juce::jlimit (0.0, 0.5, hz / sampleRate); }
         double getPhase() const noexcept         { return phase; }
+        void setPhase (double p) noexcept        { phase = p - std::floor (p); }
 
         /** Recale la phase sur le transport : cyclesPerQuarter = nombre de periodes par noire. */
         void syncToPpq (double ppqPosition, double cyclesPerQuarter, double phaseOffset = 0.0) noexcept

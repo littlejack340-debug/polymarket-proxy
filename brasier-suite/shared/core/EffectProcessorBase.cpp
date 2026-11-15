@@ -242,6 +242,9 @@ namespace brasier::core
             const int length = juce::jmin (preparedBlockSize, numSamples - start);
             processChunk (fullBlock.getSubBlock (static_cast<size_t> (start), static_cast<size_t> (length)));
             context.oversamplingChanged = false;
+
+            // La position du transport avance avec chaque morceau (LFO synchronises)
+            context.ppqPosition += static_cast<double> (length) / context.sampleRate * context.bpm / 60.0;
         }
     }
 

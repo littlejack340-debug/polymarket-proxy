@@ -10,7 +10,10 @@
 #include "Fournaise/Source/FournaiseProcessor.h"
 #include "Gain/Source/GainProcessor.h"
 #include "Mue/Source/MueProcessor.h"
+#include "Remous/Source/RemousProcessor.h"
+#include "Ressort/Source/RessortProcessor.h"
 #include "Ruban/Source/RubanProcessor.h"
+#include "Tamis/Source/TamisProcessor.h"
 
 namespace
 {
@@ -20,6 +23,9 @@ namespace
         if (name.equalsIgnoreCase ("fournaise")) return std::make_unique<brasier::fournaise::FournaiseProcessor>();
         if (name.equalsIgnoreCase ("ruban"))     return std::make_unique<brasier::ruban::RubanProcessor>();
         if (name.equalsIgnoreCase ("mue"))       return std::make_unique<brasier::mue::MueProcessor>();
+        if (name.equalsIgnoreCase ("tamis"))     return std::make_unique<brasier::tamis::TamisProcessor>();
+        if (name.equalsIgnoreCase ("remous"))    return std::make_unique<brasier::remous::RemousProcessor>();
+        if (name.equalsIgnoreCase ("ressort"))   return std::make_unique<brasier::ressort::RessortProcessor>();
         return nullptr;
     }
 

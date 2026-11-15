@@ -14,10 +14,14 @@ target_sources(BrasierTests PRIVATE
     FournaiseTests.cpp
     RubanTests.cpp
     MueTests.cpp
+    Step5Tests.cpp
     ${PROJECT_SOURCE_DIR}/plugins/Gain/Source/GainProcessor.cpp
     ${PROJECT_SOURCE_DIR}/plugins/Fournaise/Source/FournaiseProcessor.cpp
     ${PROJECT_SOURCE_DIR}/plugins/Ruban/Source/RubanProcessor.cpp
-    ${PROJECT_SOURCE_DIR}/plugins/Mue/Source/MueProcessor.cpp)
+    ${PROJECT_SOURCE_DIR}/plugins/Mue/Source/MueProcessor.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/Tamis/Source/TamisProcessor.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/Remous/Source/RemousProcessor.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/Ressort/Source/RessortProcessor.cpp)
 
 target_include_directories(BrasierTests PRIVATE ${PROJECT_SOURCE_DIR}/plugins)
 
