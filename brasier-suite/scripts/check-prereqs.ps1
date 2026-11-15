@@ -4,8 +4,8 @@
     Usage (depuis le dossier brasier-suite) :
         powershell -ExecutionPolicy Bypass -File scripts\check-prereqs.ps1
 
-    Verifie : Visual Studio 2022 + outils C++ (MSVC), Windows SDK,
-              CMake >= 3.22, Git, chemins longs, dossier VST3.
+    Verifie : Visual Studio 2022 ou 2026 + outils C++ (MSVC), Windows SDK,
+              CMake >= 3.22 (>= 4.2 avec VS 2026), Git, chemins longs, dossier VST3.
 #>
 
 $ErrorActionPreference = 'SilentlyContinue'
@@ -24,32 +24,35 @@ Write-Host "=== Brasier Suite : verification des prerequis ===" -ForegroundColor
 Write-Host ""
 
 # ---------------------------------------------------------------------------
-# 1. Visual Studio 2022 avec les outils C++ (MSVC v143)
+# 1. Visual Studio 2022 ou 2026 avec les outils C++ (les Build Tools suffisent)
 # ---------------------------------------------------------------------------
-$vsInstallCmd = 'winget install Microsoft.VisualStudio.2022.Community --override "--add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --passive"'
+$vsInstallCmd = 'winget install Microsoft.VisualStudio.2022.BuildTools --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive"'
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 $vsPath = $null
+$vsVersion = $null   # '2022' ou '2026'
+$cpp = 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64'
 
 if (Test-Path $vswhere) {
-    $vsCpp = & $vswhere -version '[17.0,18.0)' -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -latest -property installationPath
-    $vsAny = & $vswhere -version '[17.0,18.0)' -products * -latest -property installationPath
-
-    if ($vsCpp) {
-        $vsPath = $vsCpp
-        $vsName = & $vswhere -version '[17.0,18.0)' -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -latest -property displayName
-        $vsVer  = & $vswhere -version '[17.0,18.0)' -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -latest -property installationVersion
-        Write-Ok "$vsName ($vsVer) avec les outils C++ : $vsPath"
-    }
-    elseif ($vsAny) {
-        Write-Miss "Visual Studio 2022 est installe mais SANS les outils C++" `
-                   "Visual Studio Installer > Modifier > cocher la charge de travail 'Developpement Desktop en C++'"
-    }
-    else {
-        $vs2026 = & $vswhere -version '[18.0,19.0)' -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -latest -property installationPath
-        if ($vs2026) {
-            Write-Info "Visual Studio 2026 avec C++ detecte ($vs2026) : utilisable avec 'cmake --preset vs2026' (CMake 4.2+)"
+    foreach ($candidate in @(@{ Name = '2022'; Range = '[17.0,18.0)' }, @{ Name = '2026'; Range = '[18.0,19.0)' })) {
+        $path = & $vswhere -version $candidate.Range -products * -requires $cpp -latest -property installationPath
+        if ($path) {
+            $vsPath = $path
+            $vsVersion = $candidate.Name
+            $vsName = & $vswhere -version $candidate.Range -products * -requires $cpp -latest -property displayName
+            Write-Ok "$vsName avec les outils C++ : $vsPath"
+            break
         }
-        Write-Miss "Visual Studio 2022 introuvable" $vsInstallCmd
+    }
+
+    if (-not $vsPath) {
+        $vsAny = & $vswhere -version '[17.0,19.0)' -products * -latest -property installationPath
+        if ($vsAny) {
+            Write-Miss "Visual Studio est installe mais SANS les outils C++ ($vsAny)" `
+                       "Visual Studio Installer > Modifier > cocher 'Developpement Desktop en C++'"
+        }
+        else {
+            Write-Miss "Aucun Visual Studio 2022 / 2026 avec les outils C++" $vsInstallCmd
+        }
     }
 }
 else {
@@ -78,11 +81,13 @@ if ($cmake) {
     $line = (& cmake --version | Select-Object -First 1)
     if ($line -match '(\d+)\.(\d+)\.(\d+)') {
         $ver = [version]"$($Matches[1]).$($Matches[2]).$($Matches[3])"
-        if ($ver -ge [version]'3.22.0') {
+        # JUCE 8 demande CMake 3.22 ; Visual Studio 2026 demande un CMake qui connait son generateur (4.2+)
+        $minimum = if ($vsVersion -eq '2026') { [version]'4.2.0' } else { [version]'3.22.0' }
+        if ($ver -ge $minimum) {
             Write-Ok "CMake $ver : $($cmake.Source)"
         }
         else {
-            Write-Miss "CMake $ver est trop ancien (3.22 minimum pour JUCE 8)" "winget install Kitware.CMake  (puis rouvrir le terminal)"
+            Write-Miss "CMake $ver est trop ancien ($minimum minimum ici)" "winget upgrade Kitware.CMake  (puis rouvrir le terminal)"
         }
     }
 }
@@ -92,7 +97,7 @@ else {
 
     if ($vsCmake -and (Test-Path $vsCmake)) {
         Write-Miss "CMake n'est pas dans le PATH (celui fourni avec Visual Studio existe : $vsCmake)" `
-                   "Utiliser le terminal 'Developer PowerShell for VS 2022', ou : winget install Kitware.CMake"
+                   "winget install Kitware.CMake  (puis rouvrir le terminal)"
     }
     else {
         Write-Miss "CMake introuvable" "winget install Kitware.CMake  (puis rouvrir le terminal)"

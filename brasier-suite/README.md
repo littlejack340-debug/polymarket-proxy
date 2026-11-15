@@ -34,8 +34,8 @@ Puis dans FL Studio : *Options > Manage plugins > Find installed plugins*. Les p
 
 | Outil | Version | Installation |
 |---|---|---|
-| Visual Studio 2022 (Community suffit) | 17.x, charge de travail **« Développement Desktop en C++ »** (MSVC v143 + Windows SDK) | `winget install Microsoft.VisualStudio.2022.Community --override "--add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --passive"` |
-| CMake | **3.22 minimum** (exigé par JUCE 8) | `winget install Kitware.CMake` |
+| Visual Studio **2022 ou 2026** (Community ou Build Tools) | avec les outils C++ (MSVC + Windows SDK) | `winget install Microsoft.VisualStudio.2022.BuildTools --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive"` |
+| CMake | **3.22 minimum** (JUCE 8), **4.2 minimum avec VS 2026** | `winget install Kitware.CMake` |
 | Git | toute version récente | `winget install Git.Git` |
 
 `scripts\check-prereqs.ps1` vérifie tout et donne la commande à lancer pour ce qui manque.
@@ -51,8 +51,9 @@ cmake --build --preset release     # compile les 7 plugins en Release (VST3 + St
 
 Ou sans preset : `cmake -S . -B build\vs2022 -G "Visual Studio 17 2022" -A x64` puis
 `cmake --build build\vs2022 --config Release --parallel`. Le script `scripts\build.ps1` fait la même chose
-(`-Tests` lance en plus les tests, `-Install` copie les plugins). La solution `build\vs2022\BrasierSuite.sln`
-s'ouvre aussi dans Visual Studio. Visual Studio 2026 : `cmake --preset vs2026` (CMake 4.2+).
+(`-Tests` lance en plus les tests, `-Install` copie les plugins) et choisit tout seul Visual Studio 2022
+ou 2026 (le dossier de build devient alors `build\vs2026`). La solution `build\vs20xx\BrasierSuite.sln`
+s'ouvre aussi dans Visual Studio. Visual Studio 2026 à la main : `cmake --preset vs2026` (CMake 4.2+).
 
 Les plugins sortent dans `build\vs2022\plugins\<Nom>\Brasier<Nom>_artefacts\Release\` :
 `VST3\Brasier <Nom>.vst3` (dossier du plugin) et `Standalone\Brasier <Nom>.exe`.

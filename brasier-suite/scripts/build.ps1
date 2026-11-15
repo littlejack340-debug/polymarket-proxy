@@ -1,27 +1,60 @@
 <#
-    Brasier Suite - configuration + compilation (Visual Studio 2022, x64).
+    Brasier Suite - configuration + compilation (Visual Studio 2022 ou 2026, x64).
 
     Usage (depuis le dossier brasier-suite) :
         powershell -ExecutionPolicy Bypass -File scripts\build.ps1               # Release
         powershell -ExecutionPolicy Bypass -File scripts\build.ps1 -Tests        # + tests hors-ligne
         powershell -ExecutionPolicy Bypass -File scripts\build.ps1 -Install      # + copie dans le dossier VST3
         powershell -ExecutionPolicy Bypass -File scripts\build.ps1 -Config Debug
+        powershell -ExecutionPolicy Bypass -File scripts\build.ps1 -VisualStudio 2026
+
+    Par defaut, le script choisit tout seul la version de Visual Studio installee
+    (2022 en priorite, sinon 2026 ; les "Build Tools" suffisent).
 #>
 param(
     [ValidateSet('Release', 'Debug')]
     [string] $Config = 'Release',
+    [ValidateSet('auto', '2022', '2026')]
+    [string] $VisualStudio = 'auto',
     [switch] $Tests,
     [switch] $Install
 )
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$buildDir = Join-Path $root 'build\vs2022'
+
+# ---------------------------------------------------------------------------
+# Version de Visual Studio (avec les outils C++)
+# ---------------------------------------------------------------------------
+function Find-VisualStudioWithCpp ([string] $range) {
+    $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+    if (-not (Test-Path $vswhere)) { return $null }
+    return & $vswhere -version $range -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -latest -property installationPath
+}
+
+if ($VisualStudio -eq 'auto') {
+    if (Find-VisualStudioWithCpp '[17.0,18.0)') { $VisualStudio = '2022' }
+    elseif (Find-VisualStudioWithCpp '[18.0,19.0)') { $VisualStudio = '2026' }
+    else { throw "Aucun Visual Studio 2022 ou 2026 avec les outils C++ : lance scripts\check-prereqs.ps1" }
+}
+
+# Nom exact du generateur CMake correspondant (lu dans 'cmake --help')
+$vsMajor = if ($VisualStudio -eq '2026') { '18' } else { '17' }
+$generator = & cmake --help | ForEach-Object {
+    if ($_ -match "^\*?\s*(Visual Studio $vsMajor \d{4})") { $Matches[1] }
+} | Select-Object -First 1
+
+if (-not $generator) {
+    throw "Ce CMake ne connait pas Visual Studio $VisualStudio. Mets CMake a jour : winget upgrade Kitware.CMake (puis rouvre le terminal)"
+}
+
+$buildDir = Join-Path $root "build\vs$VisualStudio"
+Write-Host "Visual Studio $VisualStudio -> generateur '$generator', dossier $buildDir" -ForegroundColor Cyan
 
 Push-Location $root
 try {
     # 1. Configuration (le premier passage telecharge JUCE : quelques minutes)
-    $configureArgs = @('--preset', 'vs2022')
+    $configureArgs = @('-S', '.', '-B', $buildDir, '-G', $generator, '-A', 'x64')
     if ($Tests) { $configureArgs += '-DBRASIER_BUILD_TESTS=ON' }
 
     & cmake @configureArgs
@@ -57,7 +90,7 @@ try {
 
     # 5. Installation (optionnelle)
     if ($Install) {
-        & (Join-Path $PSScriptRoot 'install-vst3.ps1') -Config $Config
+        & (Join-Path $PSScriptRoot 'install-vst3.ps1') -Config $Config -BuildDir $buildDir
     }
 }
 finally {
