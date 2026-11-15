@@ -13,9 +13,11 @@ target_sources(BrasierTests PRIVATE
     GainTests.cpp
     FournaiseTests.cpp
     RubanTests.cpp
+    MueTests.cpp
     ${PROJECT_SOURCE_DIR}/plugins/Gain/Source/GainProcessor.cpp
     ${PROJECT_SOURCE_DIR}/plugins/Fournaise/Source/FournaiseProcessor.cpp
-    ${PROJECT_SOURCE_DIR}/plugins/Ruban/Source/RubanProcessor.cpp)
+    ${PROJECT_SOURCE_DIR}/plugins/Ruban/Source/RubanProcessor.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/Mue/Source/MueProcessor.cpp)
 
 target_include_directories(BrasierTests PRIVATE ${PROJECT_SOURCE_DIR}/plugins)
 

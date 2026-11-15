@@ -94,7 +94,7 @@ namespace brasier::core
         // 3. Chemin dry : retard maximal = pire cas d'oversampling + latence de l'effet
         const bool osAddsLatency = options.common.withOversampling && ! options.oversamplingLatencyHandledByEffect;
         const int maxLatency = (osAddsLatency ? overSampler.getMaxLatencySamples() : 0)
-                             + getEffectLatencySamples();
+                             + getMaxEffectLatencySamples();
 
         dryWet.prepare (sampleRate, numChannels, preparedBlockSize, maxLatency);
         dryWet.setMixLaw (options.mixLaw);
@@ -189,10 +189,18 @@ namespace brasier::core
         context.oversamplingFactor = overSampler.getFactor();
         context.oversampledRate = context.sampleRate * context.oversamplingFactor;
         context.oversamplingChanged = true;
+    }
+
+    void EffectProcessorBase::updateLatency() noexcept
+    {
+        updateEffectLatency();
 
         const int latency = computeTotalLatency();
-        dryWet.setLatency (latency);
-        pendingLatency.store (latency);   // reporte a l'hote par timerCallback()
+        if (latency != dryWet.getLatency())
+        {
+            dryWet.setLatency (latency);
+            pendingLatency.store (latency);   // reporte a l'hote par timerCallback()
+        }
     }
 
     void EffectProcessorBase::processInternal (juce::AudioBuffer<float>& buffer, bool forceBypass) noexcept
@@ -211,6 +219,7 @@ namespace brasier::core
 
         updateHostInfo();
         updateOversampling();
+        updateLatency();
 
         // Cibles des parametres communs. Le bypass se fait en douceur :
         // mix -> 0 (dry seul, deja retarde) et output -> 0 dB.

@@ -46,6 +46,7 @@ add_subdirectory(shared)
 add_subdirectory(plugins/Gain)
 add_subdirectory(plugins/Fournaise)
 add_subdirectory(plugins/Ruban)
+add_subdirectory(plugins/Mue)
 
 if(BRASIER_BUILD_TESTS)
     add_subdirectory(tests)

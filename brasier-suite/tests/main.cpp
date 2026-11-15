@@ -9,6 +9,7 @@
 #include "TestHelpers.h"
 #include "Fournaise/Source/FournaiseProcessor.h"
 #include "Gain/Source/GainProcessor.h"
+#include "Mue/Source/MueProcessor.h"
 #include "Ruban/Source/RubanProcessor.h"
 
 namespace
@@ -18,6 +19,7 @@ namespace
         if (name.equalsIgnoreCase ("gain"))      return std::make_unique<brasier::gain::GainProcessor>();
         if (name.equalsIgnoreCase ("fournaise")) return std::make_unique<brasier::fournaise::FournaiseProcessor>();
         if (name.equalsIgnoreCase ("ruban"))     return std::make_unique<brasier::ruban::RubanProcessor>();
+        if (name.equalsIgnoreCase ("mue"))       return std::make_unique<brasier::mue::MueProcessor>();
         return nullptr;
     }
 

@@ -136,9 +136,17 @@ namespace brasier::core
                 oversampler().processDown (block); */
         virtual void processEffect (juce::dsp::AudioBlock<float> block, const ProcessContext& ctx) = 0;
 
-        /** Latence propre a l'effet (hors oversampling), en echantillons. Doit etre
-            stable apres prepareEffect(). */
+        /** Latence propre a l'effet (hors oversampling), en echantillons. Elle peut
+            changer en cours de lecture (ex. mode Live / Qualite du pitch shifter) :
+            le socle la relit a chaque bloc, juste apres updateEffectLatency(). */
         virtual int getEffectLatencySamples() const { return 0; }
+
+        /** Latence maximale possible de l'effet (dimensionne la ligne de retard du dry). */
+        virtual int getMaxEffectLatencySamples() const { return getEffectLatencySamples(); }
+
+        /** Appele en debut de bloc (thread audio) : l'effet peut y appliquer un
+            reglage qui change sa latence, avant que le socle ne la relise. */
+        virtual void updateEffectLatency() {}
 
         /** Gain d'auto-gain (dB) en mode AutoGainMode::fixed. Appele a chaque bloc
             depuis le thread audio : doit etre un simple calcul. */
@@ -158,6 +166,7 @@ namespace brasier::core
         void processChunk (juce::dsp::AudioBlock<float> block) noexcept;
         void updateHostInfo() noexcept;
         void updateOversampling() noexcept;
+        void updateLatency() noexcept;
         int computeTotalLatency() const noexcept;
         void timerCallback() override;
 

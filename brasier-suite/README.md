@@ -8,7 +8,7 @@ Suite d'effets audio originale au format **VST3** (+ Standalone) pour FL Studio 
 | **Brasier Gain** | gain + soft-clip, banc d'essai de l'infrastructure commune | ✅ étape 1 |
 | **Brasier Fournaise** | saturateur multi-modèles (tube, transistor, bande, diode) | ✅ étape 2 |
 | **Brasier Ruban** | delay à bande / analogique, sync tempo, ping-pong, ducking | ✅ étape 3 |
-| **Brasier Mue** | pitch shift et formant shift indépendants, mode robot | étape 4 |
+| **Brasier Mue** | pitch shift et formant shift indépendants, mode robot | ✅ étape 4 |
 | **Brasier Tamis** | filtre multimode avec résonance saturée, LFO et envelope follower | étape 5 |
 | **Brasier Remous** | chorus, flanger, phaser, tremolo | étape 5 |
 | **Brasier Ressort** | reverb à ressort et plate | étape 5 |
@@ -106,6 +106,8 @@ brasier-suite/
 │   │   ├── Lfo.h                 LFO (7 formes, recalage sur le transport), aleatoire temps reel
 │   │   ├── TempoSync.h           divisions de mesure (triolets, pointees)
 │   │   ├── EnvelopeFollower.h    suiveur d'enveloppe attaque/relachement
+│   │   ├── PitchDetector.*       detection de hauteur YIN (sur signal decime)
+│   │   ├── PsolaShifter.*        pitch / formant TD-PSOLA, mode robot, latence Live/Qualite
 │   │   └── MathUtils.h
 │   ├── core/                 socle commun des plugins
 │   │   ├── CommonParameters.*    Mix, Output, Auto Gain, Oversampling, Bypass + fabriques de paramètres
@@ -116,7 +118,8 @@ brasier-suite/
 ├── plugins/
 │   ├── Gain/                 Brasier Gain (étape 1)
 │   ├── Fournaise/            Brasier Fournaise (étape 2)
-│   └── Ruban/                Brasier Ruban (étape 3)
+│   ├── Ruban/                Brasier Ruban (étape 3)
+│   └── Mue/                  Brasier Mue (étape 4)
 ├── tests/                    tests hors-ligne (console)
 └── scripts/                  check-prereqs.ps1, build.ps1, install-vst3.ps1
 ```
